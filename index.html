@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<!--
+  ============================================================================
+  DREAM DATA — proposta inicial (front estatico, sem build)
+
+  Design system herdado do site da Dream Factory (df.trestech.com.br):
+  Outfit, azul #0099ef / gradiente #00c2ff→#0047ff, titulos em minusculas,
+  .tag editorial, faixas escuras de "palco", cursor ponto + anel, botoes magneticos.
+  Hero e loader proprios (campo de pontos + iris), para nao repetir a DF.
+
+  ESTRUTURA
+    index.html ........ conteudo (uma <section> por capitulo, autocontida)
+    tokens.css ........ tokens do design system
+    proposta.css ...... um bloco por componente
+    proposta.js ....... Lenis + GSAP/ScrollTrigger; cada modulo so roda se o
+                        seletor dele existir na pagina
+    vendor/ ........... GSAP 3.12.5, ScrollTrigger 3.12.5, Lenis 1.0.42, Outfit
+    img/ .............. marca (mark.svg) e imagens conceituais do deck
+
+  COMPONENTES REUTILIZAVEIS (para crescer a pagina sem JS novo)
+    .big ............................ titulo; o JS mascara palavra a palavra
+    [data-count] .................... contador pt-BR (data-dec, data-prefix, data-suffix)
+    [data-graph] + .rels li ......... diagrama de ligacoes: as arestas sao lidas
+                                      da lista (data-a, data-b, data-r = h|v|top)
+    [data-steps] .................... trilha de etapas que acende com o scroll
+    [data-bars] ..................... barras que crescem ao entrar na tela
+    [data-words] .................... frase que acende palavra a palavra
+    [data-dark] ..................... secao escura (nav e indicador se adaptam)
+    [data-chap] ..................... nome do capitulo no indicador fixo
+  ============================================================================
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#ffffff" />
+<title>Dream Data — o histórico completo de cada pessoa</title>
+<meta name="description" content="Dream Data: arquitetura e produto para conectar os dados dos eventos da Dream Factory. Proposta inicial, outubro de 2026." />
+<meta property="og:title" content="Dream Data — inteligência de dados da Dream Factory" />
+<meta property="og:description" content="O histórico completo de cada pessoa. Arquitetura e produto para conectar os dados dos eventos da Dream Factory." />
+<meta property="og:type" content="website" />
+
+<link rel="preload" href="vendor/fonts/outfit-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="vendor/fonts.css">
+<link rel="icon" href="img/mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="proposta.css" />
+<script>
+  if (!location.hash && 'scrollRestoration' in history) history.scrollRestoration = 'manual';
+  document.documentElement.classList.add('carregando');   // sem rolagem durante o loader (o JS tira)
+  try { var t = localStorage.getItem('dd-tema'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</head>
+<body>
+
+<!-- ============ ICONES (Lucide, ISC) ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></symbol>
+  <symbol id="i-contact" viewBox="0 0 24 24"><path d="M16 2v2"/><path d="M7 22v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/><path d="M8 2v2"/><circle cx="12" cy="11" r="3"/><rect x="3" y="4" width="18" height="18" rx="2"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></symbol>
+  <symbol id="i-pointer" viewBox="0 0 24 24"><path d="M4.04 4.69a.5.5 0 0 1 .65-.65l16 6.5a.5.5 0 0 1-.06.95l-6.13 1.58a2 2 0 0 0-1.43 1.43l-1.58 6.13a.5.5 0 0 1-.95.06z"/></symbol>
+  <symbol id="i-finger" viewBox="0 0 24 24"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .13-5.35 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></symbol>
+  <symbol id="i-flow" viewBox="0 0 24 24"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></symbol>
+  <symbol id="i-panel" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></symbol>
+  <symbol id="i-filein" viewBox="0 0 24 24"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></symbol>
+  <symbol id="i-checks" viewBox="0 0 24 24"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></symbol>
+  <symbol id="i-branch" viewBox="0 0 24 24"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-brain" viewBox="0 0 24 24"><path d="M12 5a3 3 0 1 0-6 .13 4 4 0 0 0-2.52 5.77 4 4 0 0 0 .55 6.59A4 4 0 1 0 12 18Z"/><path d="M9 13a4.5 4.5 0 0 0 3-4"/><path d="M6 5.13A3 3 0 0 0 6.4 6.5"/><path d="M3.48 10.9a4 4 0 0 1 .58-.4"/><path d="M6 18a4 4 0 0 1-1.97-.52"/><path d="M12 13h4"/><path d="M12 18h6a2 2 0 0 1 2 2v1"/><path d="M12 8h8"/><path d="M16 8V5a2 2 0 0 1 2-2"/><circle cx="16" cy="13" r=".5"/><circle cx="18" cy="3" r=".5"/><circle cx="20" cy="21" r=".5"/><circle cx="20" cy="8" r=".5"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 21V7"/><path d="m16 12 2 2 4-4"/><path d="M22 6V4a1 1 0 0 0-1-1h-5a4 4 0 0 0-4 4 4 4 0 0 0-4-4H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h6a3 3 0 0 1 3 3 3 3 0 0 1 3-3h6a1 1 0 0 0 1-1v-1.3"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M14.54 21.69a.5.5 0 0 0 .94-.03l6.5-19a.5.5 0 0 0-.64-.63l-19 6.5a.5.5 0 0 0-.02.93l7.93 3.18a2 2 0 0 1 1.11 1.11z"/><path d="m21.85 2.15-10.94 10.94"/></symbol>
+  <symbol id="i-calheart" viewBox="0 0 24 24"><path d="M3 10h18V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h7"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M21.29 14.7a2.43 2.43 0 0 0-2.65-.52c-.3.12-.57.3-.8.53l-.34.34-.35-.34a2.43 2.43 0 0 0-2.65-.53c-.3.12-.56.3-.79.53-.95.94-1 2.53.2 3.74L17.5 22l3.6-3.55c1.2-1.21 1.14-2.8.19-3.74Z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M12 16v5"/><path d="M16 14v7"/><path d="M20 10v11"/><path d="m22 3-8.65 8.65a.5.5 0 0 1-.7 0L9.35 8.35a.5.5 0 0 0-.7 0L2 15"/><path d="M4 18v3"/><path d="M8 14v7"/></symbol>
+  <symbol id="i-ask" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><path d="m8 11 2 2 4-4"/><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+</svg>
+
+<!-- ============ LOADER ============ -->
+<!-- contador sobre azul; sai fechando em iris ate o centro da marca do hero -->
+<div id="loader" aria-hidden="true">
+  <span class="loader__t">conectando os dados</span>
+  <span class="loader__n"><b id="loaderN">0</b>%</span>
+</div>
+
+<!-- cursor: ponto exato + anel que segue com atraso e cresce sobre o clicavel -->
+<div class="cur" aria-hidden="true"></div>
+<div class="cur-dot" aria-hidden="true"></div>
+
+<!-- progresso de leitura + capitulo atual -->
+<div class="prog" aria-hidden="true"><i id="progBar"></i></div>
+<div class="chap" id="chap" aria-hidden="true"><b id="chapN">00</b><span id="chapT">início</span></div>
+
+<!-- ============ NAV ============ -->
+<header class="nav" id="nav">
+  <a class="logo" href="#top" aria-label="dream data — início">
+    <img src="img/mark.svg" alt="">
+    <span><b>dream</b>data</span>
+  </a>
+  <nav class="nav__links" aria-label="Principal">
+    <a href="#oportunidade">oportunidade</a>
+    <a href="#pessoas">pessoas</a>
+    <a href="#arquitetura">arquitetura</a>
+    <a href="#produto">produto</a>
+    <a href="#ia">ia</a>
+    <a href="#piloto">piloto</a>
+  </nav>
+  <button class="tema" id="tema" aria-label="Alternar tema claro e escuro" aria-pressed="false">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor"/></svg>
+  </button>
+  <a class="nav__cta" href="#contato">próximo passo</a>
+  <button class="burger" id="burger" aria-label="Abrir menu" aria-expanded="false" aria-controls="menu">
+    <i></i><i></i>
+  </button>
+</header>
+
+<!-- ============ MENU MOBILE ============ -->
+<div class="menu" id="menu" inert>
+  <nav aria-label="Menu">
+    <a href="#oportunidade"><small>01</small>oportunidade</a>
+    <a href="#pessoas"><small>02</small>pessoas</a>
+    <a href="#evidencias"><small>03</small>evidências</a>
+    <a href="#arquitetura"><small>04</small>arquitetura</a>
+    <a href="#modelo"><small>05</small>modelo</a>
+    <a href="#produto"><small>06</small>produto</a>
+    <a href="#qualidade"><small>07</small>qualidade</a>
+    <a href="#ia"><small>08</small>inteligência</a>
+    <a href="#piloto"><small>11</small>piloto</a>
+  </nav>
+</div>
+
+<main id="top">
+
+<!-- ============ HERO ============ -->
+<section class="hero" data-chap="00|início">
+  <!-- campo de pontos (canvas, desenhado no JS): a marca e um halftone que se
+       monta a partir de um ponto e mostra a foto por dentro dos pontos -->
+  <canvas class="field" id="field" aria-hidden="true"></canvas>
+  <img class="field__src" id="fieldImg" src="img/hero.webp" srcset="img/hero-m.webp 700w, img/hero.webp 1250w" sizes="(max-width:860px) 80vw, 560px" alt="" fetchpriority="high">
+
+  <div class="wrap hero__in">
+    <!-- so reserva o lugar da marca no layout; o canvas le a posicao daqui -->
+    <div class="hero__mark" id="heroMark" aria-hidden="true"></div>
+    <h1 class="hero__title" data-split>o histórico completo de <span class="g">cada pessoa.</span></h1>
+  </div>
+
+  <div class="wrap hero__bar">
+    <p class="hero__kicker">dream data &middot; inteligência de dados da dream factory</p>
+    <p class="hero__lead">Arquitetura e produto para conectar os dados dos eventos da Dream Factory.</p>
+    <div class="hero__end">
+      <span class="hero__meta">proposta inicial <i></i> outubro 2026</span>
+      <a class="hero__down" href="#oportunidade">role para explorar <i></i></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FLUXO ============ -->
+<!-- duas esteiras em sentidos opostos: entidades como etiquetas ligadas por tracejado -->
+<div class="flux" aria-hidden="true">
+  <div class="flux__track"><span><i>pessoa</i><i>participante</i><i>cliente</i><i>lead</i><i>edição</i><i>inscrição</i><i>pedido</i><i>formulário</i></span></div>
+  <div class="flux__track" data-rev><span><i>documento</i><i>evento</i><i>presença</i><i>compra</i><i>contato</i><i>consentimento</i><i>origem</i><i>histórico</i></span></div>
+</div>
+
+<!-- ============ 01 OPORTUNIDADE ============ -->
+<section class="sec" id="oportunidade" data-chap="01|oportunidade">
+  <div class="wrap rail">
+    <span class="tag">01 · oportunidade</span>
+    <div class="rail__body">
+      <h2 class="big">o ativo já existe. falta <span class="g">conectar o contexto.</span></h2>
+      <div class="cols">
+        <p class="reveal">Os eventos da Dream Factory já produzem uma base rica: inscrições, compras e respostas de formulário acumuladas edição após edição.</p>
+        <p class="reveal">O que falta é ligar cada registro à pessoa certa, com um vocabulário comum entre as fontes — sem perder a origem de nenhum dado.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="score" data-dark-band>
+  <div class="wrap">
+    <div class="score__grid">
+      <div class="stat">
+        <svg class="ic"><use href="#i-db"/></svg>
+        <b data-count="139">139</b>
+        <strong>tabelas</strong>
+        <span>Fontes e relações que precisam de um vocabulário comum.</span>
+      </div>
+      <div class="stat">
+        <svg class="ic"><use href="#i-users"/></svg>
+        <b data-count="552294">552.294</b>
+        <strong>registros de participantes</strong>
+        <span>A mesma pessoa pode aparecer em vários eventos.</span>
+      </div>
+      <div class="stat">
+        <svg class="ic"><use href="#i-clip"/></svg>
+        <b data-count="3.84" data-dec="2" data-suffix=" mi">3,84 mi</b>
+        <strong>respostas de formulários</strong>
+        <span>Perguntas diferentes guardam informações valiosas.</span>
+      </div>
+    </div>
+    <p class="note note--band">Fonte: profiling offline do dump GoDream de 08/10/2026. Registros não equivalem a pessoas únicas.</p>
+  </div>
+</section>
+
+<!-- ============ 02 PESSOAS ============ -->
+<section class="dark who" id="pessoas" data-dark data-chap="02|pessoas">
+  <div class="who__pin" id="whoPin">
+    <div class="wrap">
+      <span class="tag tag--light">02 · pessoas</span>
+      <h2 class="big">uma identidade. <span class="g">diferentes papéis.</span></h2>
+      <p class="lead reveal">O documento real normalizado resolve a pessoa. Cada papel preserva seu contexto.</p>
+
+      <div class="who__graph" data-graph id="whoGraph">
+        <svg class="wires" aria-hidden="true"></svg>
+        <div class="role role--a">
+          <svg class="ic"><use href="#i-ticket"/></svg>
+          <h3 data-node="participante">participante</h3>
+          <p>Inscrição por edição.<br>Presença exige evidência própria.</p>
+        </div>
+        <div class="core" data-node="pessoa_">
+          <div class="core__ring" data-node="pessoa"><svg class="ic"><use href="#i-user"/></svg></div>
+          <h3>pessoa</h3>
+          <p>ID interno estável<br>Documento único</p>
+        </div>
+        <div class="role role--b">
+          <svg class="ic"><use href="#i-bag"/></svg>
+          <h3 data-node="cliente">cliente</h3>
+          <p>Compra confirmada.<br>Pode comprar para terceiros.</p>
+        </div>
+        <div class="role role--c" data-node="lead">
+          <svg class="ic"><use href="#i-contact"/></svg>
+          <h3>lead</h3>
+          <p>Contato elegível para ativação, com origem e finalidade.</p>
+        </div>
+        <ul class="rels sr-only">
+          <li data-a="participante" data-b="pessoa" data-r="h">participante é um papel da pessoa</li>
+          <li data-a="pessoa" data-b="cliente" data-r="h">cliente é um papel da pessoa</li>
+          <li data-a="pessoa_" data-b="lead" data-r="v">lead é um papel da pessoa</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 03 EVIDÊNCIAS ============ -->
+<section class="sec" id="evidencias" data-chap="03|evidências">
+  <div class="wrap">
+    <span class="tag">03 · evidências de mercado</span>
+    <h2 class="big">receita: resultados publicados de <span class="g">bases integradas.</span></h2>
+    <p class="lead reveal">Cada gráfico tem base 100 calculada a partir do crescimento relatado. Os recortes são distintos.</p>
+
+    <div class="cases">
+      <article class="case reveal">
+        <header>
+          <h3>ibm cloud</h3>
+          <b class="case__big" data-count="70" data-prefix="+" data-suffix="%">+70%</b>
+          <p>Receita no recorte do case em três meses</p>
+        </header>
+        <div class="bars" data-bars role="img" aria-label="IBM Cloud, receita indexada: base 100, após 170">
+          <div class="bars__grid" aria-hidden="true"><i data-v="200"></i><i data-v="150"></i><i data-v="100"></i><i data-v="50"></i><i data-v="0"></i></div>
+          <div class="bar bar--base" style="--v:100" data-tip="base: 100"><b>100</b><span>base</span></div>
+          <div class="bar" style="--v:170" data-tip="após: 170 (+70%)"><b>170</b><span>após</span></div>
+        </div>
+        <footer>Dados padronizados em 150 produtos</footer>
+      </article>
+      <article class="case reveal">
+        <header>
+          <h3>shiseido</h3>
+          <b class="case__big" data-count="20" data-prefix="+" data-suffix="%">+20%</b>
+          <p>Receita em loja por membro do programa de fidelidade</p>
+        </header>
+        <div class="bars" data-bars role="img" aria-label="Shiseido, receita indexada: base 100, após 120">
+          <div class="bars__grid" aria-hidden="true"><i data-v="200"></i><i data-v="150"></i><i data-v="100"></i><i data-v="50"></i><i data-v="0"></i></div>
+          <div class="bar bar--base" style="--v:100" data-tip="base: 100"><b>100</b><span>base</span></div>
+          <div class="bar" style="--v:120" data-tip="após: 120 (+20%)"><b>120</b><span>após</span></div>
+        </div>
+        <footer>Ofertas pessoais a partir de perfis integrados</footer>
+      </article>
+    </div>
+    <p class="note reveal">Casos de fornecedores. Não demonstram causalidade isolada e não são previsão de retorno para a Dream Data.</p>
+
+    <!-- Salesforce: cartao escuro dentro da secao clara -->
+    <article class="sf reveal" data-dark-card>
+      <div class="sf__txt">
+        <span class="tag tag--light">salesforce · data cloud</span>
+        <h3>salesforce conecta eventos, navegação e crm.</h3>
+        <b class="sf__big" data-count="60" data-prefix="+" data-suffix="%">+60%</b>
+        <p class="sf__desc">Aumento relatado em receita de leads de marketing e valor contratual por lead.</p>
+        <p class="sf__app">Aplicação à Dream: reconhecer o mesmo público entre eventos e orientar a próxima oferta.</p>
+      </div>
+      <div class="sf__graph" data-graph>
+        <svg class="wires" aria-hidden="true"></svg>
+        <div class="src" data-node="eventos"><svg class="ic"><use href="#i-cal"/></svg>eventos</div>
+        <div class="src" data-node="navegacao"><svg class="ic"><use href="#i-pointer"/></svg>navegação</div>
+        <div class="src" data-node="crm"><svg class="ic"><use href="#i-contact"/></svg>crm</div>
+        <div class="sf__out" data-node="perfil"><svg class="ic"><use href="#i-finger"/></svg><span>perfil<br>unificado</span></div>
+        <ul class="rels sr-only">
+          <li data-a="eventos" data-b="perfil" data-r="h">eventos alimentam o perfil unificado</li>
+          <li data-a="navegacao" data-b="perfil" data-r="h">navegação alimenta o perfil unificado</li>
+          <li data-a="crm" data-b="perfil" data-r="h">CRM alimenta o perfil unificado</li>
+        </ul>
+      </div>
+      <p class="note note--dark">Fonte: Salesforce, case de uso interno do Data Cloud. Receita de leads e valor contratual por lead, não receita corporativa total.</p>
+    </article>
+  </div>
+</section>
+
+<!-- ============ 04 ARQUITETURA (scroll horizontal no desktop) ============ -->
+<section class="arch" id="arquitetura" data-chap="04|arquitetura">
+  <div class="wrap arch__head">
+    <span class="tag">04 · arquitetura</span>
+    <h2 class="big">arquitetura <span class="g">modular</span> do sistema.</h2>
+    <p class="lead reveal">MySQL como proposta inicial. Módulos independentes, com origem e versão em cada transformação.</p>
+  </div>
+
+  <div class="arch__pin" id="archPin">
+    <div class="arch__track" id="archTrack">
+      <div class="arch__rail" aria-hidden="true"><i id="archFill"></i><b id="archDot"></b></div>
+      <article class="mod">
+        <span class="mod__n">01</span>
+        <svg class="ic"><use href="#i-plug"/></svg>
+        <h3>fontes</h3>
+        <ul><li>GoDream: <b>a cada hora</b></li><li>Credenciamento: <b>sazonal</b></li><li>Todo Mundo no Rio: <b>sazonal</b></li></ul>
+      </article>
+      <article class="mod">
+        <span class="mod__n">02</span>
+        <svg class="ic"><use href="#i-flow"/></svg>
+        <h3>ingestão</h3>
+        <ul><li>Contratos por fonte</li><li>Histórico de cargas</li><li>Reprocessamento seguro</li></ul>
+      </article>
+      <article class="mod">
+        <span class="mod__n">03</span>
+        <svg class="ic"><use href="#i-db"/></svg>
+        <h3>base central</h3>
+        <ul><li>Pessoa e documento</li><li>Eventos e inscrições</li><li>Comércio e respostas</li></ul>
+      </article>
+      <article class="mod">
+        <span class="mod__n">04</span>
+        <svg class="ic"><use href="#i-panel"/></svg>
+        <h3>uso dos dados</h3>
+        <ul><li>API interna e dashboard</li><li>IA e conceitos revisados</li><li>RD Station por seleção</li></ul>
+      </article>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="callout reveal"><svg class="ic"><use href="#i-shield"/></svg>Qualidade, finalidade de uso e rastreabilidade acompanham todas as etapas.</p>
+  </div>
+</section>
+
+<!-- ============ 05 MODELO RELACIONAL ============ -->
+<section class="sec er" id="modelo" data-chap="05|modelo">
+  <div class="wrap">
+    <span class="tag">05 · banco de dados</span>
+    <h2 class="big">modelo <span class="g">relacional</span> central.</h2>
+    <ul class="keys reveal"><li><b>PK</b> chave primária</li><li><b>FK</b> chave estrangeira</li><li><b>UK</b> unicidade</li><li>relações principais do esboço lógico</li></ul>
+
+    <div class="er__graph" data-graph>
+      <svg class="wires" aria-hidden="true"></svg>
+      <div class="tb" data-node="pessoa"><h3>pessoa</h3><p><b>PK</b> pessoa_id<br>nome / nascimento</p></div>
+      <div class="tb" data-node="edicao"><h3>edição</h3><p><b>PK</b> edição_id<br>evento / ano / contexto</p></div>
+      <div class="tb" data-node="pedido"><h3>pedido</h3><p><b>PK</b> pedido_id<br><b>FK</b> comprador_pessoa_id<br><b>FK</b> edição_id / valores</p></div>
+      <div class="tb" data-node="documento"><h3>documento</h3><p><b>PK</b> documento_id<br><b>FK</b> pessoa_id<br><b>UK</b> tipo + país + valor</p></div>
+      <div class="tb tb--hot" data-node="inscricao"><h3>inscrição</h3><p><b>PK</b> inscrição_id<br><b>FK</b> pessoa_id / edição_id<br><b>FK</b> item_id (opcional)</p></div>
+      <div class="tb" data-node="item"><h3>item de pedido</h3><p><b>PK</b> item_id<br><b>FK</b> pedido_id<br>quantidade / preço</p></div>
+      <ul class="rels">
+        <li data-a="pessoa" data-b="pedido" data-r="top" data-label="comprador 1:N pedidos">pessoa <b>1:N</b> pedido (comprador)</li>
+        <li data-a="pessoa" data-b="documento" data-r="v">pessoa <b>1:N</b> documento</li>
+        <li data-a="pessoa" data-b="inscricao" data-r="h" data-hot>pessoa <b>1:N</b> inscrição</li>
+        <li data-a="edicao" data-b="inscricao" data-r="v">edição <b>1:N</b> inscrição</li>
+        <li data-a="edicao" data-b="pedido" data-r="h">edição <b>1:N</b> pedido</li>
+        <li data-a="pedido" data-b="item" data-r="v">pedido <b>1:N</b> item de pedido</li>
+        <li data-a="inscricao" data-b="item" data-r="h">inscrição <b>N:1</b> item de pedido</li>
+      </ul>
+    </div>
+    <p class="note reveal">Cortesias e inscrições sem pedido continuam no modelo. Valores comerciais permanecem no grão do pedido.</p>
+  </div>
+</section>
+
+<!-- ============ 06 PRODUTO (protótipo) ============ -->
+<section class="dark proto" id="produto" data-dark data-chap="06|produto">
+  <div class="wrap">
+    <span class="tag tag--light">06 · protótipo</span>
+    <h2 class="big">primeiro esboço <span class="g">do produto.</span></h2>
+    <p class="lead reveal">Uma visão integrada de pessoas, compras e inscrições ao longo do tempo.</p>
+  </div>
+
+  <div class="wrap proto__stage">
+    <div class="dash" id="dash">
+      <aside class="dash__side">
+        <div class="dash__logo"><img src="img/mark.svg" alt=""><span><b>dream</b>data</span></div>
+        <small>inteligência de dados</small>
+        <a class="on">visão geral</a><a>pessoas e histórico</a><a>bancos e patrocinadores</a>
+        <small>operação</small>
+        <a>fontes e importações</a><a>qualidade dos dados</a><a>segmentos e RD Station</a>
+        <small>fontes conectadas</small>
+        <p><b>GoDream</b>atualização a cada hora</p>
+        <p><b>Credenciamento</b>importação sazonal</p>
+        <p><b>Todo Mundo no Rio</b>importação sazonal</p>
+      </aside>
+      <div class="dash__main">
+        <div class="dash__top">
+          <div>
+            <small>dream factory / dream data</small>
+            <h3>conheça as pessoas por trás dos eventos.</h3>
+            <p>Uma visão integrada de pessoas, compras e inscrições ao longo do tempo.</p>
+          </div>
+          <span class="chip">primeiro esboço · discovery</span>
+        </div>
+        <p class="dash__warn"><b>dados ilustrativos</b> — todos os números, pessoas, eventos e bancos abaixo são exemplos de apresentação.</p>
+        <div class="dash__filters" aria-hidden="true">
+          <label>ano do evento<span>todos</span></label>
+          <label>evento<span>todos os eventos</span></label>
+          <label>origem<span>todas as fontes</span></label>
+          <label>papel<span>todos os papéis</span></label>
+          <label>documento<span class="ph">pesquisar documento</span></label>
+          <label>nascimento · de / até<span class="ph">dd/mm/aaaa</span></label>
+        </div>
+        <div class="dash__kpis">
+          <div><small>pessoas únicas no recorte</small><b data-count="8">8</b><span>identidade por documento</span></div>
+          <div><small>clientes com compra confirmada</small><b data-count="5">5</b><span>comprador pode ser outro participante</span></div>
+          <div><small>inscrições vigentes</small><b data-count="17">17</b><span>inclui cortesias válidas</span></div>
+          <div><small>recorrência entre edições</small><b data-count="63" data-suffix="%">63%</b><span>pessoas em duas ou mais edições</span></div>
+        </div>
+        <div class="dash__row">
+          <div class="dash__card">
+            <h4>histórico de inscrições por edição</h4>
+            <small>inscrições vigentes · valores do conjunto fictício selecionado</small>
+            <div class="vbars" data-bars role="img" aria-label="Inscrições por edição: 2025 corrida 4, 2025 festival 2, 2026 corrida 4, 2026 festival 3, 2026 credenciamento 4">
+              <div class="bar" style="--v:4" data-tip="2025 · corrida: 4"><b>4</b><span>2025 · corrida</span></div>
+              <div class="bar" style="--v:2" data-tip="2025 · festival: 2"><b>2</b><span>2025 · festival</span></div>
+              <div class="bar" style="--v:4" data-tip="2026 · corrida: 4"><b>4</b><span>2026 · corrida</span></div>
+              <div class="bar" style="--v:3" data-tip="2026 · festival: 3"><b>3</b><span>2026 · festival</span></div>
+              <div class="bar" style="--v:4" data-tip="2026 · credenciamento: 4"><b>4</b><span>2026 · credenc.</span></div>
+            </div>
+          </div>
+          <div class="dash__card">
+            <h4>perfil agregado para bancos</h4>
+            <small>pagamentos elegíveis de cartão · exemplos de emissores</small>
+            <ul class="meters" data-bars>
+              <li style="--v:50"><span>Banco A</span><i></i><b>50%</b></li>
+              <li style="--v:25"><span>Banco B</span><i></i><b>25%</b></li>
+              <li style="--v:25"><span>Banco C</span><i></i><b>25%</b></li>
+              <li style="--v:0"><span>Desconhecido</span><i></i><b>0%</b></li>
+            </ul>
+            <p class="dash__fine">Exemplo: um pagamento de cartão por cliente elegível no recorte (4 registros). Emissor observado não indica banco principal. Sem evidência de cartão fica fora deste denominador.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note note--dark reveal">Dados inteiramente ilustrativos. Filtros por ano, evento, fonte, papel, documento e nascimento.</p>
+  </div>
+</section>
+
+<!-- ============ 07 QUALIDADE ============ -->
+<section class="sec" id="qualidade" data-chap="07|qualidade">
+  <div class="wrap">
+    <span class="tag">07 · qualidade</span>
+    <h2 class="big">como refinar a base <span class="g">sem perder a evidência.</span></h2>
+    <p class="lead reveal">Cada atributo preserva o valor original, a origem, a atualidade e os conflitos.</p>
+
+    <ol class="steps" data-steps style="--n:5">
+      <li class="steps__line" aria-hidden="true"><i></i></li>
+      <li class="step"><svg class="ic"><use href="#i-filein"/></svg><h3>recebido</h3><p>Fonte, ID original e lote da carga</p></li>
+      <li class="step"><svg class="ic"><use href="#i-checks"/></svg><h3>normalizado</h3><p>Documentos, datas e opções válidas</p></li>
+      <li class="step"><svg class="ic"><use href="#i-finger"/></svg><h3>identificado</h3><p>Documento único e conflitos visíveis</p></li>
+      <li class="step"><svg class="ic"><use href="#i-branch"/></svg><h3>contextualizado</h3><p>Edição, inscrição e papel correto</p></li>
+      <li class="step"><svg class="ic"><use href="#i-ok"/></svg><h3>elegível</h3><p>Finalidade, seleção e revisão da ativação</p></li>
+    </ol>
+
+    <p class="callout reveal"><svg class="ic"><use href="#i-shield"/></svg>Cortesia zero permanece válida. Nome repetido gera investigação, nunca exclusão automática.</p>
+    <p class="note reveal">Reconciliação por pedido: trocas, upgrades, cancelamentos e reembolsos evitam dupla contagem.</p>
+  </div>
+</section>
+
+<!-- ============ 08 IA ============ -->
+<section class="dark ai" id="ia" data-dark data-chap="08|inteligência">
+  <div class="wrap">
+    <span class="tag tag--light">08 · inteligência semântica</span>
+    <h2 class="big">ia para interpretar <span class="g">formulários diferentes.</span></h2>
+    <p class="lead reveal">Sugestões estruturadas passam por validação e revisão antes de entrar no catálogo.</p>
+
+    <div class="ai__grid">
+      <div class="ai__col reveal">
+        <svg class="ic"><use href="#i-clip"/></svg>
+        <h3>perguntas de origem</h3>
+        <p class="q" data-q="0">“Qual marca de tênis você usa?”</p>
+        <p class="q" data-q="1">“Qual marca pretende comprar?”</p>
+      </div>
+      <div class="ai__core reveal">
+        <div class="ai__brain"><svg class="ic"><use href="#i-brain"/></svg></div>
+        <h3>api de ia</h3>
+        <p>conceito + contexto<br>+ justificativa em JSON</p>
+      </div>
+      <div class="ai__col reveal">
+        <svg class="ic"><use href="#i-book"/></svg>
+        <h3>conceitos distintos</h3>
+        <p class="q" data-q="0">Uso declarado de marca</p>
+        <p class="q" data-q="1">Intenção de compra de marca</p>
+      </div>
+    </div>
+
+    <figure class="term reveal">
+      <figcaption><i></i><i></i><i></i><span>exemplo ilustrativo · sugestão estruturada aguardando revisão</span></figcaption>
+      <pre id="term" aria-live="off"></pre>
+    </figure>
+
+    <p class="ai__rule" data-words>Regras locais validam a estrutura. O revisor confirma o significado. A versão registra a decisão.</p>
+  </div>
+</section>
+
+<!-- ============ 09 INTEGRAÇÕES ============ -->
+<section class="sec apis" id="integracoes" data-chap="09|integrações">
+  <div class="wrap">
+    <span class="tag">09 · apis</span>
+    <h2 class="big">integrações candidatas e <span class="g">o dado que acrescentam.</span></h2>
+    <p class="lead reveal">Propostas para o piloto. Escolha de fornecedor depende de cobertura, custo, finalidade e avaliação.</p>
+  </div>
+  <ol class="api">
+    <li><svg class="ic"><use href="#i-card"/></svg><h3>BIN de cartão</h3><b>Banco e bandeira observados</b><p>Versão e cobertura. Seis dígitos podem deixar o emissor desconhecido.</p></li>
+    <li><svg class="ic"><use href="#i-phone"/></svg><h3>Twilio Lookup</h3><b>Formato e tipo de linha</b><p>Validar cobertura brasileira. A consulta não comprova titularidade.</p></li>
+    <li><svg class="ic"><use href="#i-send"/></svg><h3>RD Station</h3><b>Contato elegível e conversões</b><p>Resultados retornam ao recorte para avaliar campanhas.</p></li>
+    <li><svg class="ic"><use href="#i-brain"/></svg><h3>Gateway de IA</h3><b>Conceitos e sugestões revisadas</b><p>Vertex AI ou Claude. Minimização, versão, custo e trilha de revisão.</p></li>
+  </ol>
+</section>
+
+<!-- ============ 10 NOVOS USOS ============ -->
+<section class="dark uses" id="usos" data-dark data-chap="10|novos usos">
+  <div class="wrap uses__grid">
+    <div>
+      <span class="tag tag--light">10 · novos usos</span>
+      <h2 class="big">oportunidades para o <span class="g">“megabrain”</span> da dream.</h2>
+      <ul class="uses__list">
+        <li class="reveal"><svg class="ic"><use href="#i-calheart"/></svg><div><h3>próximo evento provável</h3><p>Histórico e interesses declarados orientam recomendações.</p></div></li>
+        <li class="reveal"><svg class="ic"><use href="#i-chart"/></svg><div><h3>dossiê de patrocinador</h3><p>Público agregado, recorrência, banco observado e cobertura.</p></div></li>
+        <li class="reveal"><svg class="ic"><use href="#i-ask"/></svg><div><h3>perguntas mais úteis</h3><p>O catálogo identifica lacunas e melhora a coleta futura.</p></div></li>
+        <li class="reveal"><svg class="ic"><use href="#i-search"/></svg><div><h3>copiloto de descoberta</h3><p>Consultas explicam filtros, definições e fontes das métricas.</p></div></li>
+      </ul>
+    </div>
+    <figure class="uses__img" id="usesImg">
+      <img src="img/corrida.webp" alt="Corredores na orla do Rio ao pôr do sol, com linhas de conexão sobrepostas" loading="lazy" decoding="async">
+      <figcaption>imagem conceitual gerada com IA</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ 11 PILOTO ============ -->
+<section class="sec" id="piloto" data-chap="11|piloto">
+  <div class="wrap">
+    <span class="tag">11 · execução</span>
+    <h2 class="big">piloto com <span class="g">entregas verificáveis.</span></h2>
+    <p class="lead reveal">Prazos e metas serão definidos após o baseline e a validação das fontes.</p>
+
+    <ol class="steps steps--phase" data-steps style="--n:4">
+      <li class="steps__line" aria-hidden="true"><i></i></li>
+      <li class="step"><span class="step__n">01</span><h3>fundação</h3><p>Identidade e regras comerciais fechadas</p><b>Duas edições GoDream</b></li>
+      <li class="step"><span class="step__n">02</span><h3>primeira entrega</h3><p>Histórico de pessoa e perfis de bancos</p><b>Valores reconciliados</b></li>
+      <li class="step"><span class="step__n">03</span><h3>evolução</h3><p>GoDream horária e importação sazonal</p><b>Painel de qualidade</b></li>
+      <li class="step"><span class="step__n">04</span><h3>teste de valor</h3><p>Campanha elegível com grupo de controle</p><b>Receita incremental</b></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ CONTATO ============ -->
+<section class="cta" id="contato" data-dark data-chap="12|próximo passo">
+  <div class="wrap">
+    <span class="tag tag--light">próximo passo</span>
+    <h2 class="cta__title" data-split>vamos conectar o contexto?</h2>
+    <p class="cta__lead reveal">Baseline, validação das fontes e as duas primeiras edições GoDream no modelo.</p>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER + FONTES ============ -->
+<footer class="foot">
+  <div class="wrap foot__src" id="fontes">
+    <div>
+      <span class="tag">fontes e critérios de leitura</span>
+      <p class="foot__lead">Consultadas em 09/10/2026.</p>
+    </div>
+    <nav aria-label="Casos de negócio">
+      <h4>casos de negócio</h4>
+      <a href="https://customers.twilio.com/en-us/ibm" target="_blank" rel="noopener">IBM Cloud / Twilio Segment &#8599;</a>
+      <a href="https://blog.treasuredata.com/wp-content/uploads/2020/12/CDP-use-cases-treasure-data.pdf" target="_blank" rel="noopener">Shiseido / Treasure Data &#8599;</a>
+      <a href="https://www.salesforce.com/salesforce-stories/data-cloud-personalizes-marketing/" target="_blank" rel="noopener">Salesforce / Data Cloud &#8599;</a>
+      <p>Recortes comerciais específicos. Relatos de empresas e fornecedores. Não representam previsão de ganho para a Dream Data.</p>
+    </nav>
+    <nav aria-label="Documentação técnica">
+      <h4>documentação técnica</h4>
+      <a href="https://docs.cloud.google.com/vertex-ai/generative-ai/docs/samples/generativeaionvertexai-gemini-controlled-generation-response-schema-2" target="_blank" rel="noopener">Vertex AI / saída estruturada &#8599;</a>
+      <a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs" target="_blank" rel="noopener">Claude / saída estruturada &#8599;</a>
+      <a href="https://www.twilio.com/docs/lookup/quickstart" target="_blank" rel="noopener">Twilio Lookup / telefone &#8599;</a>
+      <a href="https://developers.rdstation.com/reference/post_platform-contacts" target="_blank" rel="noopener">RD Station / contatos e conversões &#8599;</a>
+      <p>Ícones: Lucide. Imagens de abertura e corrida: conceitos gerados com IA. Marca Dream Data: conceito aprovado.</p>
+    </nav>
+  </div>
+  <div class="wrap foot__bar">
+    <a class="logo" href="#top"><img src="img/mark.svg" alt=""><span><b>dream</b>data</span></a>
+    <span>inteligência de dados da dream factory &middot; proposta inicial, 09 out 2026</span>
+    <a href="#top">voltar ao topo &uarr;</a>
+  </div>
+</footer>
+
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/ScrollTrigger.min.js"></script>
+<script src="vendor/lenis.min.js"></script>
+<script src="proposta.js"></script>
+</body>
+</html>
